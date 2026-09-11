@@ -3,6 +3,7 @@ import { getCurrentCartSummary } from "@/lib/cart";
 import { formatMoney } from "@/lib/money";
 import { removeCartItemAction } from "@/lib/actions/cart.actions";
 import CartQuantitySelect from "@/components/CartQuantitySelect";
+import SafeImage from "@/components/SafeImage";
 
 export const dynamic = "force-dynamic";
 
@@ -26,12 +27,12 @@ export default async function CartPage() {
             {lines.map((line) => (
               <div key={line.productId} className="card p-4 flex gap-4 items-center">
                 <div className="w-16 h-16 bg-surface-muted rounded flex items-center justify-center text-[10px] text-ink-muted shrink-0">
-                  {line.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={line.imageUrl} alt={line.title} className="w-full h-full object-cover rounded" />
-                  ) : (
-                    line.format
-                  )}
+                  <SafeImage
+                    src={line.imageUrl}
+                    alt={line.title}
+                    className="w-full h-full object-cover rounded"
+                    fallback={<>{line.format}</>}
+                  />
                 </div>
                 <div className="flex-1 min-w-0">
                   <Link href={`/shop/product/${line.productId}`} className="font-semibold text-sm hover:text-brand line-clamp-1">

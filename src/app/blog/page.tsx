@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { listPublishedPosts } from "@/lib/db/repo";
+import SafeImage from "@/components/SafeImage";
 
 export default async function BlogIndexPage() {
   const posts = listPublishedPosts();
@@ -13,8 +14,14 @@ export default async function BlogIndexPage() {
           <Link key={p.id} href={`/blog/${p.slug}`} className="card p-5 block hover:shadow-md transition-shadow">
             <div className="flex gap-4">
               {p.cover_image_url && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={p.cover_image_url} alt="" className="w-28 h-28 rounded object-cover shrink-0" />
+                <div className="w-28 h-28 shrink-0">
+                  <SafeImage
+                    src={p.cover_image_url}
+                    alt=""
+                    className="w-28 h-28 rounded object-cover"
+                    fallback={<></>}
+                  />
+                </div>
               )}
               <div>
                 <h2 className="font-semibold text-lg">{p.title}</h2>

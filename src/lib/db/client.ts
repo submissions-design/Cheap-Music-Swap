@@ -88,6 +88,7 @@ export function getDb(): DatabaseSync {
     seedIfEmpty(global.__cmsDb);
     seedTaxonomyIfEmpty(global.__cmsDb);
     seedCarriersIfEmpty(global.__cmsDb);
+    seedSiteSettingsIfEmpty(global.__cmsDb);
   }
   return global.__cmsDb;
 }
@@ -145,6 +146,12 @@ function seedCarriersIfEmpty(db: DatabaseSync) {
     { name: "DHL", url: "https://www.dhl.com/en/express/tracking.html?AWB={tracking}" },
     { name: "Other / Local Delivery", url: null },
   ].forEach((c, i) => insert.run(randomUUID(), c.name, c.url, i));
+}
+
+function seedSiteSettingsIfEmpty(db: DatabaseSync) {
+  const count = (db.prepare("SELECT COUNT(*) as c FROM site_settings").get() as { c: number }).c;
+  if (count > 0) return;
+  db.prepare("INSERT INTO site_settings (id, header_bg_image_url) VALUES ('default', NULL)").run();
 }
 
 function seedIfEmpty(db: DatabaseSync) {

@@ -227,3 +227,9 @@ export interface BlogComment {
   status: "visible" | "hidden";
   created_at: string;
 }
+
+export interface SiteSettings {
+  id: string;
+  header_bg_image_url: string | null;
+  updated_at: string;
+}

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getPostBySlug, listCommentsForPostWithAuthor } from "@/lib/db/repo";
 import { getCurrentUser } from "@/lib/auth";
 import CommentForm from "@/components/blog/CommentForm";
+import SafeImage from "@/components/SafeImage";
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -19,8 +20,12 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
       <article className="mt-4">
         {post.cover_image_url && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={post.cover_image_url} alt="" className="w-full max-h-96 object-cover rounded mb-4" />
+          <SafeImage
+            src={post.cover_image_url}
+            alt=""
+            className="w-full max-h-96 object-cover rounded mb-4"
+            fallback={<></>}
+          />
         )}
         <h1 className="text-2xl font-bold mb-1">{post.title}</h1>
         <p className="text-xs text-ink-muted mb-6">

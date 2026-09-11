@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { createProductAdminAction, updateProductAction } from "@/lib/actions/admin-products.actions";
 import { FormAlert } from "@/components/AuthForm";
+import SafeImage from "@/components/SafeImage";
 import type { Product, Category, Genre, Artist } from "@/lib/db/types";
 
 const CONDITIONS = ["New", "Used - Like New", "Used - Good", "Used - Fair"];
@@ -113,9 +114,13 @@ export default function ProductForm({
           Cover image {isEdit ? "(upload to replace)" : "(optional)"}
         </label>
         {isEdit && product?.image_url && (
-          <div className="mb-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={product.image_url} alt="" width={96} height={96} className="rounded border border-border object-cover" />
+          <div className="mb-2 w-24 h-24">
+            <SafeImage
+              src={product.image_url}
+              alt=""
+              className="w-24 h-24 rounded border border-border object-cover"
+              fallback={<></>}
+            />
           </div>
         )}
         <input id="coverImage" name="coverImage" type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="field-input" />

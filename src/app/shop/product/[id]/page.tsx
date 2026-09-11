@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getProductById } from "@/lib/db/repo";
 import { formatMoney } from "@/lib/money";
 import { addToCartAction } from "@/lib/actions/cart.actions";
+import SafeImage from "@/components/SafeImage";
 
 export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -23,12 +24,12 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
 
       <div className="grid md:grid-cols-2 gap-10">
         <div className="aspect-square card bg-surface-muted flex items-center justify-center overflow-hidden">
-          {product.image_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={product.image_url} alt={product.title} className="h-full w-full object-cover" />
-          ) : (
-            <span className="text-ink-muted">{product.format}</span>
-          )}
+          <SafeImage
+            src={product.image_url}
+            alt={product.title}
+            className="h-full w-full object-cover"
+            fallback={<span className="text-ink-muted">{product.format}</span>}
+          />
         </div>
 
         <div>

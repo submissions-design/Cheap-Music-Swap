@@ -1,21 +1,30 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { getCurrentCartSummary } from "@/lib/cart";
-import { listDistinctFormats, listDistinctGenres, countByArtist } from "@/lib/db/repo";
+import { listDistinctFormats, listDistinctGenres, countByArtist, getSiteSettings } from "@/lib/db/repo";
 import SearchBar from "./SearchBar";
 
 export default async function Header() {
-  const [user, cart, formats, genres, artists] = await Promise.all([
+  const [user, cart, formats, genres, artists, siteSettings] = await Promise.all([
     getCurrentUser(),
     getCurrentCartSummary(),
     Promise.resolve(listDistinctFormats()),
     Promise.resolve(listDistinctGenres()),
     Promise.resolve(countByArtist(10)),
+    Promise.resolve(getSiteSettings()),
   ]);
+
+  const bannerStyle = siteSettings.header_bg_image_url
+    ? {
+        backgroundImage: `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35)), url(${siteSettings.header_bg_image_url})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }
+    : undefined;
 
   return (
     <header className="sticky top-0 z-40 bg-surface border-b border-border">
-      <div className="bg-brand text-brand-contrast text-xs">
+      <div className={siteSettings.header_bg_image_url ? "text-brand-contrast text-xs" : "bg-brand text-brand-contrast text-xs"} style={bannerStyle}>
         <div className="container-page flex items-center justify-between gap-3 py-1.5">
           <span className="hidden sm:inline truncate">Buying and selling CDs, vinyl, and turntable gear.</span>
           <div className="flex gap-4 shrink-0 ml-auto sm:ml-0">

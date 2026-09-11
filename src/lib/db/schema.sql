@@ -4,6 +4,16 @@
 
 PRAGMA foreign_keys = ON;
 
+-- Site-wide appearance settings. Single-row table (id = 'default') so the
+-- admin "Appearance" screen has somewhere to store things like a header
+-- background image without a schema change every time a new setting is
+-- added — extend this row with more columns as needed.
+CREATE TABLE IF NOT EXISTS site_settings (
+  id TEXT PRIMARY KEY,
+  header_bg_image_url TEXT,
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
   email TEXT NOT NULL UNIQUE,

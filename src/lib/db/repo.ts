@@ -19,9 +19,31 @@ import type {
   Carrier,
   BlogPost,
   BlogComment,
+  SiteSettings,
 } from "./types";
 
 const PAGE_SIZE = 12;
+
+// ---------------------------------------------------------------------
+// Site-wide appearance settings (admin-managed)
+// ---------------------------------------------------------------------
+
+export function getSiteSettings(): SiteSettings {
+  const row = getDb().prepare("SELECT * FROM site_settings WHERE id = 'default'").get() as
+    | SiteSettings
+    | undefined;
+  if (row) return row;
+  // Defensive fallback for a database that predates this table and hasn't
+  // gone through getDb()'s seed step yet (shouldn't normally happen).
+  getDb().prepare("INSERT OR IGNORE INTO site_settings (id, header_bg_image_url) VALUES ('default', NULL)").run();
+  return getDb().prepare("SELECT * FROM site_settings WHERE id = 'default'").get() as unknown as SiteSettings;
+}
+
+export function setHeaderBackgroundImage(url: string | null) {
+  getDb()
+    .prepare("UPDATE site_settings SET header_bg_image_url = ?, updated_at = datetime('now') WHERE id = 'default'")
+    .run(url);
+}
 
 // ---------------------------------------------------------------------
 // Users

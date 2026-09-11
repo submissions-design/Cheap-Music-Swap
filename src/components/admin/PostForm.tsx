@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { createPostAction, updatePostAction } from "@/lib/actions/blog.actions";
 import { FormAlert } from "@/components/AuthForm";
+import SafeImage from "@/components/SafeImage";
 import type { BlogPost } from "@/lib/db/types";
 
 export default function PostForm({ post }: { post?: BlogPost }) {
@@ -28,9 +29,13 @@ export default function PostForm({ post }: { post?: BlogPost }) {
           Cover image {isEdit ? "(upload to replace)" : "(optional)"}
         </label>
         {isEdit && post?.cover_image_url && (
-          <div className="mb-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={post.cover_image_url} alt="" width={160} height={100} className="rounded border border-border object-cover" />
+          <div className="mb-2 w-40 h-[100px]">
+            <SafeImage
+              src={post.cover_image_url}
+              alt=""
+              className="w-40 h-[100px] rounded border border-border object-cover"
+              fallback={<></>}
+            />
           </div>
         )}
         <input id="coverImage" name="coverImage" type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="field-input" />
