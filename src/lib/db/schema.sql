@@ -53,12 +53,51 @@ CREATE TABLE IF NOT EXISTS payment_methods (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Admin-managed taxonomy. Products still store format/genre/artist as plain
+-- text (kept for simplicity — see repo.ts), but the browsable lists shown
+-- in the header/sidebar and the dropdowns offered when creating a product
+-- come from these tables, so an admin can add a brand-new heading (e.g.
+-- "Clothing Gear") before any product uses it, and it will still appear
+-- with a count of 0.
+CREATE TABLE IF NOT EXISTS categories (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  is_active INTEGER NOT NULL DEFAULT 1,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS genres (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  is_active INTEGER NOT NULL DEFAULT 1,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS artists (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Shipping carriers used to build tracking links in shipment emails.
+-- {tracking} in the template is replaced with the order's tracking number.
+CREATE TABLE IF NOT EXISTS carriers (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  tracking_url_template TEXT,
+  is_active INTEGER NOT NULL DEFAULT 1,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS products (
   id TEXT PRIMARY KEY,
   sku TEXT NOT NULL UNIQUE,
   title TEXT NOT NULL,
   artist TEXT,
-  format TEXT NOT NULL, -- 'CD' | 'Vinyl' | 'Cassette' | 'Turntable' | 'Accessory' | 'Other'
+  format TEXT NOT NULL, -- category name, admin-managed via the categories table
   genre TEXT,
   condition TEXT NOT NULL DEFAULT 'New', -- 'New' | 'Used - Like New' | 'Used - Good' | 'Used - Fair'
   price_cents INTEGER NOT NULL,
@@ -133,6 +172,8 @@ CREATE TABLE IF NOT EXISTS orders (
   shipping_option_name TEXT NOT NULL,
   payment_processor TEXT NOT NULL,
   payment_reference TEXT,
+  carrier_id TEXT REFERENCES carriers(id) ON DELETE SET NULL,
+  tracking_number TEXT,
   placed_at TEXT NOT NULL DEFAULT (datetime('now')),
   shipped_at TEXT,
   cancelled_at TEXT
@@ -156,6 +197,7 @@ CREATE TABLE IF NOT EXISTS message_threads (
   user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
   guest_email TEXT,
   guest_name TEXT,
+  order_id TEXT REFERENCES orders(id) ON DELETE SET NULL,
   subject TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'open', -- 'open' | 'closed'
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -167,5 +209,32 @@ CREATE TABLE IF NOT EXISTS messages (
   thread_id TEXT NOT NULL REFERENCES message_threads(id) ON DELETE CASCADE,
   sender TEXT NOT NULL, -- 'customer' | 'admin'
   body TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- ---------------------------------------------------------------------
+-- Blog
+-- ---------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS blog_posts (
+  id TEXT PRIMARY KEY,
+  slug TEXT NOT NULL UNIQUE,
+  title TEXT NOT NULL,
+  excerpt TEXT,
+  body TEXT NOT NULL,
+  cover_image_url TEXT,
+  author_user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+  status TEXT NOT NULL DEFAULT 'draft', -- 'draft' | 'published'
+  published_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS blog_comments (
+  id TEXT PRIMARY KEY,
+  post_id TEXT NOT NULL REFERENCES blog_posts(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  body TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'visible', -- 'visible' | 'hidden'
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );

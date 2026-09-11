@@ -58,23 +58,94 @@ function openDb(): DatabaseSync {
   const schema = fs.readFileSync(schemaPath, "utf8");
   db.exec(schema);
 
+  migrate(db);
+
   return db;
+}
+
+// Minimal, additive migration for databases created before a column was
+// added (SQLite's CREATE TABLE IF NOT EXISTS in schema.sql won't add new
+// columns to an existing table). Safe to run on every startup.
+function migrate(db: DatabaseSync) {
+  const hasColumn = (table: string, column: string): boolean => {
+    const cols = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+    return cols.some((c) => c.name === column);
+  };
+  if (!hasColumn("orders", "carrier_id")) {
+    db.exec("ALTER TABLE orders ADD COLUMN carrier_id TEXT REFERENCES carriers(id) ON DELETE SET NULL");
+  }
+  if (!hasColumn("orders", "tracking_number")) {
+    db.exec("ALTER TABLE orders ADD COLUMN tracking_number TEXT");
+  }
+  if (!hasColumn("message_threads", "order_id")) {
+    db.exec("ALTER TABLE message_threads ADD COLUMN order_id TEXT REFERENCES orders(id) ON DELETE SET NULL");
+  }
 }
 
 export function getDb(): DatabaseSync {
   if (!global.__cmsDb) {
     global.__cmsDb = openDb();
     seedIfEmpty(global.__cmsDb);
+    seedTaxonomyIfEmpty(global.__cmsDb);
+    seedCarriersIfEmpty(global.__cmsDb);
   }
   return global.__cmsDb;
 }
 
 // -----------------------------------------------------------------------
-// First-run seed data (idempotent — only runs when the products table is
+// First-run seed data (idempotent — only runs when the relevant table is
 // empty). Gives the storefront realistic-looking inventory immediately.
 // Replace with the client's real inventory export whenever it's ready —
 // see scripts/seed.ts for a standalone re-runnable version of this data.
 // -----------------------------------------------------------------------
+
+// Categories/genres/artists are admin-managed (see /admin/categories and
+// /admin/genres) — this only seeds the starting set so the storefront
+// isn't empty on first run.
+function seedTaxonomyIfEmpty(db: DatabaseSync) {
+  const catCount = (db.prepare("SELECT COUNT(*) as c FROM categories").get() as { c: number }).c;
+  if (catCount === 0) {
+    const insertCat = db.prepare(
+      "INSERT INTO categories (id, name, is_active, sort_order) VALUES (?, ?, 1, ?)"
+    );
+    ["CD", "Vinyl", "Cassette", "Turntable", "Accessory", "Other"].forEach((name, i) =>
+      insertCat.run(randomUUID(), name, i)
+    );
+  }
+
+  const genreCount = (db.prepare("SELECT COUNT(*) as c FROM genres").get() as { c: number }).c;
+  if (genreCount === 0) {
+    const insertGenre = db.prepare("INSERT INTO genres (id, name, is_active, sort_order) VALUES (?, ?, 1, ?)");
+    [
+      "Rock", "Pop", "Jazz", "Soul", "Hip-Hop", "Electronic", "Alternative", "Punk", "Folk", "Reggae", "Metal",
+      "Accessories", "Gift Cards", "Storage",
+    ].forEach((name, i) => insertGenre.run(randomUUID(), name, i));
+  }
+
+  const artistCount = (db.prepare("SELECT COUNT(*) as c FROM artists").get() as { c: number }).c;
+  if (artistCount === 0) {
+    const insertArtist = db.prepare("INSERT OR IGNORE INTO artists (id, name) VALUES (?, ?)");
+    const distinctArtists = db
+      .prepare("SELECT DISTINCT artist FROM products WHERE artist IS NOT NULL")
+      .all() as { artist: string }[];
+    for (const row of distinctArtists) insertArtist.run(randomUUID(), row.artist);
+  }
+}
+
+function seedCarriersIfEmpty(db: DatabaseSync) {
+  const count = (db.prepare("SELECT COUNT(*) as c FROM carriers").get() as { c: number }).c;
+  if (count > 0) return;
+  const insert = db.prepare(
+    "INSERT INTO carriers (id, name, tracking_url_template, is_active, sort_order) VALUES (?, ?, ?, 1, ?)"
+  );
+  [
+    { name: "USPS", url: "https://tools.usps.com/go/TrackConfirmAction?tLabels={tracking}" },
+    { name: "UPS", url: "https://www.ups.com/track?tracknum={tracking}" },
+    { name: "FedEx", url: "https://www.fedex.com/fedextrack/?trknbr={tracking}" },
+    { name: "DHL", url: "https://www.dhl.com/en/express/tracking.html?AWB={tracking}" },
+    { name: "Other / Local Delivery", url: null },
+  ].forEach((c, i) => insert.run(randomUUID(), c.name, c.url, i));
+}
 
 function seedIfEmpty(db: DatabaseSync) {
   const row = db.prepare("SELECT COUNT(*) as c FROM products").get() as { c: number };

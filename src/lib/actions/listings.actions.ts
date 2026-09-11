@@ -2,10 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { requireUser, requireAdmin } from "@/lib/auth";
-import { createSellerListing, setListingStatus, markOrderShipped } from "@/lib/db/repo";
+import { createSellerListing, setListingStatus, listCategories } from "@/lib/db/repo";
 import type { FormState } from "./auth.actions";
 
-const FORMATS = ["CD", "Vinyl", "Cassette", "Turntable", "Accessory", "Other"];
 const CONDITIONS = ["New", "Used - Like New", "Used - Good", "Used - Fair"];
 
 export async function createListingAction(_prevState: FormState, formData: FormData): Promise<FormState> {
@@ -24,7 +23,8 @@ export async function createListingAction(_prevState: FormState, formData: FormD
   if (!title || !format || !condition || !description) {
     return { error: "Title, format, condition, and description are required." };
   }
-  if (!FORMATS.includes(format)) return { error: "Choose a valid format." };
+  const activeCategoryNames = listCategories(true).map((c) => c.name);
+  if (!activeCategoryNames.includes(format)) return { error: "Choose a valid category." };
   if (!CONDITIONS.includes(condition)) return { error: "Choose a valid condition." };
   if (!priceDollars || priceDollars <= 0) return { error: "Enter a price greater than $0." };
 
@@ -56,10 +56,4 @@ export async function rejectListingAction(formData: FormData) {
   const note = String(formData.get("note") || "").trim();
   setListingStatus(String(formData.get("productId") || ""), "rejected", note || undefined);
   revalidatePath("/admin/listings");
-}
-
-export async function markOrderShippedAction(formData: FormData) {
-  await requireAdmin();
-  markOrderShipped(String(formData.get("orderId") || ""));
-  revalidatePath("/admin/orders");
 }

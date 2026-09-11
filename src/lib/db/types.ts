@@ -118,6 +118,8 @@ export interface Order {
   shipping_option_name: string;
   payment_processor: string;
   payment_reference: string | null;
+  carrier_id: string | null;
+  tracking_number: string | null;
   placed_at: string;
   shipped_at: string | null;
   cancelled_at: string | null;
@@ -139,6 +141,7 @@ export interface MessageThread {
   user_id: string | null;
   guest_email: string | null;
   guest_name: string | null;
+  order_id: string | null;
   subject: string;
   status: "open" | "closed";
   created_at: string;
@@ -167,4 +170,60 @@ export interface ShippingOption {
   flat_rate_cents: number;
   is_active: number;
   sort_order: number;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  is_active: number;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface Genre {
+  id: string;
+  name: string;
+  is_active: number;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface Artist {
+  id: string;
+  name: string;
+  created_at: string;
+}
+
+export interface Carrier {
+  id: string;
+  name: string;
+  tracking_url_template: string | null;
+  is_active: number;
+  sort_order: number;
+  created_at: string;
+}
+
+export type BlogPostStatus = "draft" | "published";
+
+export interface BlogPost {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string | null;
+  body: string;
+  cover_image_url: string | null;
+  author_user_id: string | null;
+  status: BlogPostStatus;
+  published_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BlogComment {
+  id: string;
+  post_id: string;
+  user_id: string;
+  body: string;
+  status: "visible" | "hidden";
+  created_at: string;
 }

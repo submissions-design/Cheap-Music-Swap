@@ -73,6 +73,9 @@ export default async function Header() {
           <Link href="/shop" className="font-medium hover:text-brand">
             Browse All
           </Link>
+          <Link href="/blog" className="font-medium hover:text-brand">
+            Blog
+          </Link>
         </div>
       </div>
     </header>

@@ -14,6 +14,7 @@ export default function Footer() {
             <li><Link href="/shop" className="hover:text-brand">Browse All</Link></li>
             <li><Link href="/shop?category=accessories" className="hover:text-brand">Accessories</Link></li>
             <li><Link href="/account/sell" className="hover:text-brand">Sell Your Music</Link></li>
+            <li><Link href="/blog" className="hover:text-brand">Blog</Link></li>
           </ul>
         </div>
         <div>

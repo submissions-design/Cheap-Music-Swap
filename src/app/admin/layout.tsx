@@ -4,9 +4,13 @@ import { logoutAction } from "@/lib/actions/auth.actions";
 
 const NAV = [
   { href: "/admin", label: "Dashboard" },
+  { href: "/admin/inventory", label: "Inventory" },
   { href: "/admin/orders", label: "Orders" },
   { href: "/admin/messages", label: "Messages" },
   { href: "/admin/listings", label: "Seller Listings" },
+  { href: "/admin/categories", label: "Categories & Genres" },
+  { href: "/admin/settings", label: "Cart Settings" },
+  { href: "/admin/blog", label: "Blog" },
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {

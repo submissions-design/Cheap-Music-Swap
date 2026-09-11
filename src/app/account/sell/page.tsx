@@ -1,5 +1,5 @@
 import { requireUser } from "@/lib/auth";
-import { listListingsBySeller } from "@/lib/db/repo";
+import { listListingsBySeller, listCategories, listGenres, listArtists } from "@/lib/db/repo";
 import { formatMoney } from "@/lib/money";
 import CreateListingForm from "@/components/CreateListingForm";
 
@@ -13,6 +13,7 @@ const STATUS_LABEL: Record<string, string> = {
 export default async function SellPage() {
   const user = await requireUser("/account/sell");
   const listings = listListingsBySeller(user.id);
+  const [categories, genres, artists] = [listCategories(true), listGenres(true), listArtists()];
 
   return (
     <div className="max-w-2xl">
@@ -38,7 +39,7 @@ export default async function SellPage() {
       )}
 
       <h2 className="font-semibold mb-3 text-sm">New Listing</h2>
-      <CreateListingForm />
+      <CreateListingForm categories={categories} genres={genres} artists={artists} />
     </div>
   );
 }

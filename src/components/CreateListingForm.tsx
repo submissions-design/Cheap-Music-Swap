@@ -3,11 +3,19 @@
 import { useActionState } from "react";
 import { createListingAction } from "@/lib/actions/listings.actions";
 import { FormAlert } from "@/components/AuthForm";
+import type { Category, Genre, Artist } from "@/lib/db/types";
 
-const FORMATS = ["CD", "Vinyl", "Cassette", "Turntable", "Accessory", "Other"];
 const CONDITIONS = ["New", "Used - Like New", "Used - Good", "Used - Fair"];
 
-export default function CreateListingForm() {
+export default function CreateListingForm({
+  categories,
+  genres,
+  artists,
+}: {
+  categories: Category[];
+  genres: Genre[];
+  artists: Artist[];
+}) {
   const [state, formAction, pending] = useActionState(createListingAction, {});
 
   return (
@@ -18,18 +26,28 @@ export default function CreateListingForm() {
       </div>
       <div>
         <label className="field-label" htmlFor="artist">Artist</label>
-        <input id="artist" name="artist" className="field-input" />
+        <input id="artist" name="artist" list="sell-artist-options" className="field-input" />
+        <datalist id="sell-artist-options">
+          {artists.map((a) => (
+            <option key={a.id} value={a.name} />
+          ))}
+        </datalist>
       </div>
       <div>
         <label className="field-label" htmlFor="genre">Genre</label>
-        <input id="genre" name="genre" className="field-input" />
+        <input id="genre" name="genre" list="sell-genre-options" className="field-input" />
+        <datalist id="sell-genre-options">
+          {genres.map((g) => (
+            <option key={g.id} value={g.name} />
+          ))}
+        </datalist>
       </div>
       <div>
-        <label className="field-label" htmlFor="format">Format</label>
+        <label className="field-label" htmlFor="format">Category</label>
         <select id="format" name="format" required className="field-input" defaultValue="">
           <option value="" disabled>Choose...</option>
-          {FORMATS.map((f) => (
-            <option key={f} value={f}>{f}</option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.name}>{c.name}</option>
           ))}
         </select>
       </div>

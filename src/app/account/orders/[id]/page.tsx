@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
-import { getOrderById, getOrderItems } from "@/lib/db/repo";
+import { getOrderById, getOrderItems, getCarrierById, buildTrackingUrl } from "@/lib/db/repo";
 import { formatMoney } from "@/lib/money";
 import CancelOrderButton from "@/components/CancelOrderButton";
 
@@ -10,6 +10,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const order = getOrderById(id);
   if (!order || order.user_id !== user.id) notFound();
   const items = getOrderItems(order.id);
+  const carrier = order.carrier_id ? getCarrierById(order.carrier_id) : undefined;
+  const trackingUrl = buildTrackingUrl(carrier, order.tracking_number);
 
   const canCancel = order.status !== "shipped" && order.status !== "cancelled" && order.status !== "refunded";
 
@@ -52,6 +54,20 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           {order.shipping_city}, {order.shipping_state} {order.shipping_postal_code}
         </p>
       </div>
+
+      {order.status === "shipped" && order.tracking_number && (
+        <div className="card p-5 mb-4">
+          <h2 className="font-semibold mb-2">Tracking</h2>
+          <p className="text-sm">
+            {carrier?.name ?? "Carrier"}: {order.tracking_number}
+          </p>
+          {trackingUrl && (
+            <a href={trackingUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-brand hover:underline">
+              Track package &rarr;
+            </a>
+          )}
+        </div>
+      )}
 
       {canCancel && (
         <div className="card p-5">

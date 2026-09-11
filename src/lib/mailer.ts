@@ -42,3 +42,34 @@ You can view your order status any time from your account's Order History.
 
 — Cheap Music Swap`;
 }
+
+export function shipmentTrackingEmailText(
+  firstName: string,
+  orderNumber: string,
+  carrierName: string,
+  trackingNumber: string,
+  trackingUrl: string | null
+) {
+  return `Hi ${firstName},
+
+Your order ${orderNumber} has shipped via ${carrierName}.
+
+Tracking number: ${trackingNumber}
+${trackingUrl ? `Track your package: ${trackingUrl}` : ""}
+
+You can also view this order any time from your account's Order History.
+
+— Cheap Music Swap`;
+}
+
+export function orderMessageEmailText(firstName: string, orderNumber: string, body: string) {
+  return `Hi ${firstName},
+
+You have a new message about your order ${orderNumber}:
+
+"${body}"
+
+Sign in to your account to view the full conversation or reply.
+
+— Cheap Music Swap`;
+}
