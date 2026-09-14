@@ -1,46 +1,32 @@
-import { randomUUID } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 
-const ALLOWED_TYPES: Record<string, string> = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-  "image/gif": "gif",
-};
+const s3Client = new S3Client({
+  region: "auto",
+  endpoint: process.env.R2_ENDPOINT!,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
+  },
+});
 
-const MAX_BYTES = 8 * 1024 * 1024; // 8MB
+export async function uploadFile(file: File): Promise<string> {
+  const bytes = await file.arrayBuffer();
+  const buffer = Buffer.from(bytes);
 
-/**
- * Saves an uploaded cover image (from a <input type="file"> field in a
- * multipart Server Action submission) to public/uploads/<subdir>/ and
- * returns the public URL path to store on the record (e.g. products.image_url).
- *
- * Returns null when no file was submitted (empty file inputs arrive as a
- * File with size 0 and an empty name) so callers can fall back to "leave
- * the existing image unchanged."
- *
- * Note: files are written to the local filesystem, which is fine for this
- * single-server prototype. Swap this for S3/Cloud Storage before deploying
- * to any environment with an ephemeral or multi-instance filesystem.
- */
-export async function saveUploadedImage(file: File | null, subdir: string): Promise<string | null> {
-  if (!file || file.size === 0 || !file.name) return null;
+  // Generate a safe, unique filename
+  const extension = file.name.split('.').pop();
+  const filename = `${Date.now()}-${Math.round(Math.random() * 1e9)}.${extension}`;
 
-  const ext = ALLOWED_TYPES[file.type];
-  if (!ext) {
-    throw new Error("Cover image must be a JPEG, PNG, WebP, or GIF file.");
-  }
-  if (file.size > MAX_BYTES) {
-    throw new Error("Cover image must be smaller than 8MB.");
-  }
+  // Upload to Cloudflare R2
+  await s3Client.send(
+    new PutObjectCommand({
+      Bucket: process.env.R2_BUCKET_NAME,
+      Key: filename,
+      Body: buffer,
+      ContentType: file.type,
+    })
+  );
 
-  const dir = path.join(process.cwd(), "public", "uploads", subdir);
-  await mkdir(dir, { recursive: true });
-
-  const filename = `${randomUUID()}.${ext}`;
-  const bytes = Buffer.from(await file.arrayBuffer());
-  await writeFile(path.join(dir, filename), bytes);
-
-  return `/uploads/${subdir}/${filename}`;
+  // Return the public URL so the database can save it
+  return `${process.env.R2_PUBLIC_URL}/${filename}`;
 }
