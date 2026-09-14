@@ -2,6 +2,13 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { logoutAction } from "@/lib/actions/auth.actions";
 
+// Belt-and-suspenders: requireAdmin() already reads cookies(), which should
+// make every page under /admin dynamic automatically, but this makes it
+// explicit so Next.js never attempts to statically render/prerender any
+// admin page during `next build` — those pages should only ever run against
+// a live request from a logged-in admin.
+export const dynamic = "force-dynamic";
+
 const NAV = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/inventory", label: "Inventory" },

@@ -53,6 +53,13 @@ function openDb(): DatabaseSync {
   const db = withPlainRows(new DatabaseSync(dbPath));
   db.exec("PRAGMA foreign_keys = ON;");
   db.exec("PRAGMA journal_mode = WAL;");
+  // Without this, two processes touching the db file at the same moment
+  // (e.g. Next.js running several build workers in parallel, each doing its
+  // own first-time getDb() call, or two app instances briefly overlapping
+  // during a rolling deploy) get an immediate "database is locked" error
+  // instead of waiting a moment for the other to finish. 5s is generous for
+  // how small/fast every query in this app is.
+  db.exec("PRAGMA busy_timeout = 5000;");
 
   const schemaPath = path.join(process.cwd(), "src", "lib", "db", "schema.sql");
   const schema = fs.readFileSync(schemaPath, "utf8");
@@ -84,11 +91,28 @@ function migrate(db: DatabaseSync) {
 
 export function getDb(): DatabaseSync {
   if (!global.__cmsDb) {
-    global.__cmsDb = openDb();
-    seedIfEmpty(global.__cmsDb);
-    seedTaxonomyIfEmpty(global.__cmsDb);
-    seedCarriersIfEmpty(global.__cmsDb);
-    seedSiteSettingsIfEmpty(global.__cmsDb);
+    const db = openDb();
+    global.__cmsDb = db;
+
+    // Run every first-time seed check as one transaction instead of four
+    // separate autocommits. Two reasons: it's faster (one commit instead of
+    // several), and — more importantly — BEGIN IMMEDIATE grabs the write
+    // lock up front, so if a second process (another build worker, another
+    // app instance briefly overlapping during a deploy) hits its own
+    // first-time getDb() at the same moment, it simply waits behind
+    // busy_timeout for this one to finish and commit, instead of the two
+    // racing and one of them hitting "database is locked" mid-seed.
+    db.exec("BEGIN IMMEDIATE");
+    try {
+      seedIfEmpty(db);
+      seedTaxonomyIfEmpty(db);
+      seedCarriersIfEmpty(db);
+      seedSiteSettingsIfEmpty(db);
+      db.exec("COMMIT");
+    } catch (err) {
+      db.exec("ROLLBACK");
+      throw err;
+    }
   }
   return global.__cmsDb;
 }
