@@ -9,7 +9,6 @@ const s3Client = new S3Client({
   },
 });
 
-// Accept the second 'folder' argument to satisfy TypeScript
 export async function saveUploadedImage(file: File | null, folder: string = "uploads"): Promise<string | null> {
   if (!file || file.size === 0) return null;
 
@@ -19,8 +18,9 @@ export async function saveUploadedImage(file: File | null, folder: string = "upl
   const extension = file.name.split('.').pop() || 'png';
   const filename = `${Date.now()}-${Math.round(Math.random() * 1e9)}.${extension}`;
   
-  // Organize files into folders within your R2 bucket
-  const fileKey = `${folder}/${filename}`;
+  // Clean up folder paths to avoid double slashes
+  const cleanFolder = folder.replace(/^\/+|\/+$/g, '');
+  const fileKey = cleanFolder ? `${cleanFolder}/${filename}` : filename;
 
   await s3Client.send(
     new PutObjectCommand({
@@ -31,8 +31,10 @@ export async function saveUploadedImage(file: File | null, folder: string = "upl
     })
   );
 
-  // Return the complete public URL
-  return `${process.env.R2_PUBLIC_URL}/${fileKey}`;
+  // Ensure R2_PUBLIC_URL has no trailing slash
+  const baseUrl = (process.env.R2_PUBLIC_URL || '').replace(/\/+$/, '');
+  
+  return `${baseUrl}/${fileKey}`;
 }
 
 export const uploadFile = saveUploadedImage;
