@@ -9,12 +9,14 @@ const s3Client = new S3Client({
   },
 });
 
-export async function uploadFile(file: File): Promise<string> {
+export async function saveUploadedImage(file: File | null): Promise<string | null> {
+  if (!file || file.size === 0) return null;
+
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
 
   // Generate a safe, unique filename
-  const extension = file.name.split('.').pop();
+  const extension = file.name.split('.').pop() || 'png';
   const filename = `${Date.now()}-${Math.round(Math.random() * 1e9)}.${extension}`;
 
   // Upload to Cloudflare R2
@@ -23,10 +25,12 @@ export async function uploadFile(file: File): Promise<string> {
       Bucket: process.env.R2_BUCKET_NAME,
       Key: filename,
       Body: buffer,
-      ContentType: file.type,
+      ContentType: file.type || 'image/jpeg',
     })
   );
 
   // Return the public URL so the database can save it
   return `${process.env.R2_PUBLIC_URL}/${filename}`;
 }
+
+export const uploadFile = saveUploadedImage;
